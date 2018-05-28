@@ -122,28 +122,40 @@ public scope class ProduceMultiRequest : IMultiChannelRequest, IStreamInfo
 
     override protected void handle__ ( )
     {
+        auto addr = this.resources.conn_pool_info.address,
+             port = this.resources.conn_pool_info.port;
+
         scope ( exit ) this.resources.flushables() -=
             this.resources.value_producer;
 
+try
+{
         // Pass stream info interface to user.
         if ( this.params.stream_info_register !is null )
         {
+            StatsDisplay.printWithNode2(addr, port, "stream_info_register");
             this.params.stream_info_register(this.params.context, this);
         }
 
+        StatsDisplay.printWithNode2(addr, port, "io_item.producer");
         auto ready_for_data = this.params.io_item.producer();
 
         cstring value;
         do
         {
+            bool is_bid = this.resources.value_producer().is_bid;
+
             value = this.resources.value_producer()(ready_for_data,
                 this.params.context);
 
 			this.bytes_handled_ += value.length;
 
+            if (is_bid) StatsDisplay.printWithNode(addr, port, "writeArray %zu".ptr, this.bytes_handled_);
             this.writer.writeArray(value);
+            this.writer.flush();
         }
         while ( value.length ); // produce can be ended with an empty value
+        StatsDisplay.printWithNode2(addr, port, "produce ended");
 
         /*
          * Flush when finished so that the node receives the notification that
@@ -151,6 +163,13 @@ public scope class ProduceMultiRequest : IMultiChannelRequest, IStreamInfo
          */
 
         this.writer.flush();
+}
+catch (Exception e)
+{
+    StatsDisplay.printWithNode(addr, port, e);
+    throw e;
+}
     }
 }
 
+import thruster.log.StatsDisplay;
