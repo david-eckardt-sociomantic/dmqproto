@@ -46,6 +46,11 @@ debug import ocean.io.Stdout;
 
 public class ValueProducer : IProducer, IFlushable
 {
+    private bool is_bid_ = false;
+
+    bool is_bid ( bool yes ) { return this.is_bid_ = yes; }
+    bool is_bid ( )          { return this.is_bid_; }
+
     /***************************************************************************
 
         Fiber select event used to wait until a value is ready to be sent.

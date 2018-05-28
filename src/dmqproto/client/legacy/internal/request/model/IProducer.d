@@ -39,5 +39,9 @@ public interface IProducer : IContextInfo, INodeInfo
     public bool produce ( cstring value );
 
     public alias produce opCall;
+
+
+    public bool is_bid ( bool yes );
+    public bool is_bid ( );
 }
 
